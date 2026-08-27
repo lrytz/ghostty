@@ -726,6 +726,12 @@ pub const Application = extern struct {
             .move_tab => return Action.moveTab(target, value),
             .move_tab_to_new_window => return Action.moveTabToNewWindow(target),
 
+            .new_workspace,
+            .close_workspace,
+            .rename_workspace,
+            .goto_workspace,
+            => return false,
+
             .new_split => return Action.newSplit(target, value),
 
             .new_tab => return Action.newTab(target, .none),

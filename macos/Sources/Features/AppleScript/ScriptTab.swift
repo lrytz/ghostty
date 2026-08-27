@@ -141,7 +141,9 @@ final class ScriptTab: NSObject {
         }
 
         if let managedTerminalController = tabController as? TerminalController {
-            managedTerminalController.closeTabImmediately(registerRedo: false)
+            if let ws = managedTerminalController.workspaces.active, let tab = ws.activeTab {
+                managedTerminalController.closeTabImmediately(tab, in: ws, registerUndo: false)
+            }
             return nil
         }
 

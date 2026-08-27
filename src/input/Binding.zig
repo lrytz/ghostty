@@ -600,6 +600,36 @@ pub const Action = union(enum) {
     /// found by running `ghostty +version`.
     toggle_tab_overview,
 
+    /// Open a new workspace (a group of tabs, shown in a vertical sidebar).
+    ///
+    /// Only implemented on macOS.
+    new_workspace,
+
+    /// Close the current workspace and all of its tabs.
+    ///
+    /// Only implemented on macOS.
+    close_workspace,
+
+    /// Rename the current workspace via a pop-up prompt.
+    ///
+    /// Only implemented on macOS.
+    rename_workspace,
+
+    /// Go to the previous workspace.
+    ///
+    /// Only implemented on macOS.
+    previous_workspace,
+
+    /// Go to the next workspace.
+    ///
+    /// Only implemented on macOS.
+    next_workspace,
+
+    /// Go to the workspace with the specific index, starting from 1.
+    ///
+    /// Only implemented on macOS.
+    goto_workspace: usize,
+
     /// Change the title of the current focused surface via a pop-up prompt.
     prompt_surface_title,
 
@@ -1454,6 +1484,12 @@ pub const Action = union(enum) {
             .move_tab,
             .move_tab_to_new_window,
             .toggle_tab_overview,
+            .new_workspace,
+            .close_workspace,
+            .rename_workspace,
+            .previous_workspace,
+            .next_workspace,
+            .goto_workspace,
             .new_split,
             .goto_split,
             .goto_window,

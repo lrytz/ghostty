@@ -226,6 +226,9 @@ class AppDelegate: NSObject,
             toggleSecureInput(self)
         }
 
+        // Workspace menu, inserted before the Window menu.
+        WorkspaceManager.shared.installMenu(before: menuBringAllToFront?.parent)
+
         // Initial config loading
         ghosttyConfigDidChange(config: ghostty.config)
 
@@ -1175,6 +1178,13 @@ extension AppDelegate {
         syncMenuShortcut(config, action: "new_split:down", menuItem: self.menuSplitDown)
         syncMenuShortcut(config, action: "new_split:up", menuItem: self.menuSplitUp)
 
+        let workspaces = WorkspaceManager.shared
+        syncMenuShortcut(config, action: "new_workspace", menuItem: workspaces.menuNew)
+        syncMenuShortcut(config, action: "close_workspace", menuItem: workspaces.menuClose)
+        syncMenuShortcut(config, action: "rename_workspace", menuItem: workspaces.menuRename)
+        syncMenuShortcut(config, action: "previous_workspace", menuItem: workspaces.menuPrevious)
+        syncMenuShortcut(config, action: "next_workspace", menuItem: workspaces.menuNext)
+
         syncMenuShortcut(config, action: "undo", menuItem: self.menuUndo)
         syncMenuShortcut(config, action: "redo", menuItem: self.menuRedo)
         syncMenuShortcut(config, action: "copy_to_clipboard", menuItem: self.menuCopy)
@@ -1385,7 +1395,7 @@ extension AppDelegate {
                     return
                 }
             }
-            await NSApp.reply(toApplicationShouldTerminate: true)
+                    await NSApp.reply(toApplicationShouldTerminate: true)
         }
     }
 }

@@ -58,7 +58,7 @@ extension TerminalRestorable {
 
 /// The state stored for terminal window restoration.
 final class TerminalRestorableState: TerminalRestorable {
-    static var version: Int { 7 }
+    static var version: Int { 8 }
     static var minimumVersion: Int { 5 }
 
     var focusedSurface: String? {
@@ -75,6 +75,9 @@ final class TerminalRestorableState: TerminalRestorable {
     }
     var titleOverride: String? {
         internalState.titleOverride
+    }
+    func makeWorkspaceList() -> WorkspaceList? {
+        internalState.makeWorkspaceList()
     }
 
     /// Internal State we use to perform unit tests
@@ -155,9 +158,12 @@ class TerminalWindowRestoration: NSObject, NSWindowRestoration {
         // can be found for events from libghostty. This uses the low-level
         // createWindow so that AppKit can place the window wherever it should
         // be.
-        let c = TerminalController.init(
-            appDelegate.ghostty,
-            withSurfaceTree: state.surfaceTree)
+        let c: TerminalController
+        if let list = state.makeWorkspaceList() {
+            c = TerminalController(appDelegate.ghostty, withWorkspaces: list)
+        } else {
+            c = TerminalController(appDelegate.ghostty, withSurfaceTree: state.surfaceTree)
+        }
         guard let window = c.window else {
             completionHandler(nil, TerminalRestoreError.windowDidNotLoad)
             return
@@ -169,7 +175,7 @@ class TerminalWindowRestoration: NSObject, NSWindowRestoration {
         }
 
         // Restore the tab title override
-        c.titleOverride = state.titleOverride
+        if c.titleOverride == nil { c.titleOverride = state.titleOverride }
 
         // Setup our restored state on the controller
         // Find the focused surface in surfaceTree

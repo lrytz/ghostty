@@ -447,6 +447,36 @@ fn actionCommands(action: Action.Key) []const Command {
             .description = i18n.N_("Move the current tab to a new window."),
         }},
 
+        .new_workspace => comptime &.{.{
+            .action = .new_workspace,
+            .title = i18n.N_("New Workspace"),
+            .description = i18n.N_("Open a new workspace."),
+        }},
+
+        .close_workspace => comptime &.{.{
+            .action = .close_workspace,
+            .title = i18n.N_("Close Workspace"),
+            .description = i18n.N_("Close the current workspace and all of its tabs."),
+        }},
+
+        .rename_workspace => comptime &.{.{
+            .action = .rename_workspace,
+            .title = i18n.N_("Rename Workspace"),
+            .description = i18n.N_("Rename the current workspace."),
+        }},
+
+        .previous_workspace => comptime &.{.{
+            .action = .previous_workspace,
+            .title = i18n.N_("Previous Workspace"),
+            .description = i18n.N_("Go to the previous workspace."),
+        }},
+
+        .next_workspace => comptime &.{.{
+            .action = .next_workspace,
+            .title = i18n.N_("Next Workspace"),
+            .description = i18n.N_("Go to the next workspace."),
+        }},
+
         .toggle_tab_overview => comptime &.{.{
             .action = .toggle_tab_overview,
             .title = i18n.N_("Toggle Tab Overview"),
@@ -728,6 +758,7 @@ fn actionCommands(action: Action.Key) []const Command {
         .jump_to_prompt,
         .write_scrollback_file,
         .goto_tab,
+        .goto_workspace,
         .resize_split,
         .activate_key_table,
         .activate_key_table_once,

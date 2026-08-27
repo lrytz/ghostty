@@ -7130,6 +7130,35 @@ pub const Keybinds = struct {
                 .{ .key = .{ .unicode = 't' }, .mods = .{ .super = true } },
                 .{ .new_tab = {} },
             );
+
+            // Workspaces
+            try self.set.put(
+                alloc,
+                .{ .key = .{ .unicode = 'n' }, .mods = .{ .super = true, .ctrl = true } },
+                .{ .new_workspace = {} },
+            );
+            try self.set.put(
+                alloc,
+                .{ .key = .{ .unicode = 'w' }, .mods = .{ .super = true, .ctrl = true } },
+                .{ .close_workspace = {} },
+            );
+            try self.set.put(
+                alloc,
+                .{ .key = .{ .unicode = 'r' }, .mods = .{ .super = true, .ctrl = true } },
+                .{ .rename_workspace = {} },
+            );
+            try self.set.putFlags(
+                alloc,
+                .{ .key = .{ .physical = .arrow_up }, .mods = .{ .super = true, .ctrl = true, .alt = true } },
+                .{ .previous_workspace = {} },
+                .{ .performable = true },
+            );
+            try self.set.putFlags(
+                alloc,
+                .{ .key = .{ .physical = .arrow_down }, .mods = .{ .super = true, .ctrl = true, .alt = true } },
+                .{ .next_workspace = {} },
+                .{ .performable = true },
+            );
             try self.set.put(
                 alloc,
                 .{ .key = .{ .unicode = '[' }, .mods = .{ .super = true, .shift = true } },

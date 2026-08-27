@@ -624,6 +624,18 @@ extension Ghostty {
             case GHOSTTY_ACTION_GOTO_TAB:
                 return gotoTab(app, target: target, tab: action.action.goto_tab)
 
+            case GHOSTTY_ACTION_NEW_WORKSPACE:
+                newWorkspace(app, target: target)
+
+            case GHOSTTY_ACTION_CLOSE_WORKSPACE:
+                terminalController(target)?.closeWorkspace()
+
+            case GHOSTTY_ACTION_RENAME_WORKSPACE:
+                terminalController(target)?.renameWorkspace()
+
+            case GHOSTTY_ACTION_GOTO_WORKSPACE:
+                return terminalController(target)?.gotoWorkspace(action.action.goto_workspace) ?? false
+
             case GHOSTTY_ACTION_GOTO_SPLIT:
                 return gotoSplit(app, target: target, direction: action.action.goto_split)
 
@@ -916,6 +928,27 @@ extension Ghostty {
             guard let undoManager, undoManager.canRedo else { return false }
             undoManager.redo()
             return true
+        }
+
+        private static func terminalController(_ target: ghostty_target_s) -> TerminalController? {
+            guard target.tag == GHOSTTY_TARGET_SURFACE, let surface = target.target.surface else { return nil }
+            return surfaceView(from: surface)?.window?.windowController as? TerminalController
+        }
+
+        private static func tabCount(of surfaceView: SurfaceView) -> Int {
+            (surfaceView.window?.windowController as? TerminalController)?.workspaces.active?.tabs.count ?? 0
+        }
+
+        private static func newWorkspace(_ app: ghostty_app_t, target: ghostty_target_s) {
+            var config: SurfaceConfiguration? = nil
+            if target.tag == GHOSTTY_TARGET_SURFACE, let surface = target.target.surface {
+                config = SurfaceConfiguration(from: ghostty_surface_inherited_config(surface, GHOSTTY_SURFACE_CONTEXT_WINDOW))
+            }
+            guard let controller = terminalController(target) else {
+                newWindow(app, target: target)
+                return
+            }
+            controller.newWorkspace(baseConfig: config)
         }
 
         private static func newWindow(_ app: ghostty_app_t, target: ghostty_target_s) {
@@ -1261,7 +1294,7 @@ extension Ghostty {
                     guard let surfaceView = self.surfaceView(from: surface) else { return false }
 
                     // See gotoTab for notes on this check.
-                    guard (surfaceView.window?.tabGroup?.windows.count ?? 0) > 1 else { return false }
+                    guard tabCount(of: surfaceView) > 1 else { return false }
 
                     NotificationCenter.default.post(
                         name: .ghosttyMoveTab,
@@ -1293,7 +1326,7 @@ extension Ghostty {
 
                     // Similar to goto_split (see comment there) about our performability,
                     // we should make this more accurate later.
-                    guard (surfaceView.window?.tabGroup?.windows.count ?? 0) > 1 else { return false }
+                    guard tabCount(of: surfaceView) > 1 else { return false }
 
                     NotificationCenter.default.post(
                         name: Notification.ghosttyGotoTab,
