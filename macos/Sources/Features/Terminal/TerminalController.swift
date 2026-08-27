@@ -690,6 +690,13 @@ class TerminalController: BaseTerminalController, TabGroupCloseCoordinator.Contr
         }
     }
 
+    func move(tab: TerminalTab, to index: Int, in ws: Workspace) {
+        guard let from = ws.index(of: tab), from != index, ws.tabs.indices.contains(index) else { return }
+        ws.tabs.remove(at: from)
+        ws.tabs.insert(tab, at: index)
+        invalidateRestorableState()
+    }
+
     private func restoreTab(_ tab: TerminalTab, at index: Int, in ws: Workspace) {
         if workspaces.index(of: ws) == nil {
             workspaces.workspaces.append(ws)

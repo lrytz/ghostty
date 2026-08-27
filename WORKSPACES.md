@@ -31,13 +31,13 @@ Keybind actions (Zig core): `new_workspace`, `close_workspace`,
 Defaults: `cmd+ctrl+n/w/r`, `cmd+ctrl+alt+up/down`. Existing tab actions
 (`new_tab`, `close_tab`, `goto_tab`, `move_tab`, ...) operate on the model.
 
-Tab strip: click selects, `x` or middle click closes, `+` adds. Sidebar rows:
+Tab strip: click selects, `x` or middle click closes, `+` adds, drag reorders. Sidebar rows:
 click switches, right-click renames/closes. Undo (`undo` action) restores a
 closed tab, workspace or window.
 
 ## Not implemented
 
-Drag-to-reorder tabs, tab colors, macOS tab overview, move-tab-to-new-window,
+Tab colors, macOS tab overview, move-tab-to-new-window,
 sidebar hide option, tabs listed under workspaces.
 
 ## Building

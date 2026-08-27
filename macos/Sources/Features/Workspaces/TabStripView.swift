@@ -51,6 +51,10 @@ private struct TabStripContent: View {
                 controller.activate(tab: tab, in: workspace)
             } onClose: {
                 controller.closeTab(tab, in: workspace)
+            } onReorder: { targetID in
+                guard let target = workspace.tabs.first(where: { $0.id == targetID }),
+                      let index = workspace.index(of: target) else { return }
+                controller.move(tab: tab, to: index, in: workspace)
             }
         }
     }
@@ -62,6 +66,7 @@ private struct TabItem: View {
     let background: Color
     let onSelect: () -> Void
     let onClose: () -> Void
+    let onReorder: (UUID) -> Void
 
     var body: some View {
         HStack(spacing: 4) {
@@ -83,32 +88,42 @@ private struct TabItem: View {
         .overlay(alignment: .trailing) {
             Rectangle().fill(Color.primary.opacity(0.15)).frame(width: 1)
         }
-        .overlay(TabMouseView(onSelect: onSelect, onClose: onClose))
+        .overlay(TabMouseView(tabID: tab.id, onSelect: onSelect, onClose: onClose, onReorder: onReorder))
     }
 }
 
-/// AppKit hit target so middle-click closes and clicks on the trailing "x"
-/// close; SwiftUI can't observe middle clicks.
+/// AppKit hit target: clicks select (or close on the trailing "x"),
+/// middle-click closes, dragging reorders. SwiftUI can't observe middle
+/// clicks and its drag-and-drop is awkward for a tab strip.
 private struct TabMouseView: NSViewRepresentable {
     static let closeWidth: CGFloat = 16
+    let tabID: UUID
     let onSelect: () -> Void
     let onClose: () -> Void
+    let onReorder: (UUID) -> Void
 
     func makeNSView(context: Context) -> MouseView {
         let v = MouseView()
-        v.onSelect = onSelect
-        v.onClose = onClose
+        update(v)
         return v
     }
 
     func updateNSView(_ nsView: MouseView, context: Context) {
-        nsView.onSelect = onSelect
-        nsView.onClose = onClose
+        update(nsView)
+    }
+
+    private func update(_ v: MouseView) {
+        v.tabID = tabID
+        v.onSelect = onSelect
+        v.onClose = onClose
+        v.onReorder = onReorder
     }
 
     final class MouseView: NSView {
+        var tabID = UUID()
         var onSelect: () -> Void = {}
         var onClose: () -> Void = {}
+        var onReorder: (UUID) -> Void = { _ in }
 
         override func mouseDown(with event: NSEvent) {
             let p = convert(event.locationInWindow, from: nil)
@@ -116,6 +131,21 @@ private struct TabMouseView: NSViewRepresentable {
                 onClose()
             } else {
                 onSelect()
+            }
+        }
+
+        override func mouseDragged(with event: NSEvent) {
+            guard let window, let content = window.contentView, let root = content.superview else { return }
+            let point = root.convert(event.locationInWindow, from: nil)
+            guard let target = content.hitTest(point) as? MouseView, target !== self else { return }
+
+            // Only swap once the pointer passed the target's center, so the
+            // tabs don't flip back and forth at the boundary.
+            let x = event.locationInWindow.x
+            let mid = target.convert(NSPoint(x: target.bounds.midX, y: 0), to: nil).x
+            let selfX = convert(NSPoint(x: bounds.midX, y: 0), to: nil).x
+            if (selfX < mid && x > mid) || (selfX > mid && x < mid) {
+                onReorder(target.tabID)
             }
         }
 
