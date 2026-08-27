@@ -363,6 +363,17 @@ pub const Action = union(Key) {
     /// and apprts may ignore it, for example if the surface is in a
     /// split or the window is fullscreen.
     resize_window: ResizeWindow,
+    /// Open a new workspace (macOS only).
+    new_workspace,
+
+    /// Close the current workspace (macOS only).
+    close_workspace,
+
+    /// Prompt to rename the current workspace (macOS only).
+    rename_workspace,
+
+    /// Jump to a workspace (macOS only).
+    goto_workspace: GotoTab,
 
     /// Sync with: ghostty_action_tag_e
     pub const Key = enum(c_int) {
@@ -436,6 +447,10 @@ pub const Action = union(Key) {
         copy_title_to_clipboard,
         move_tab_to_new_window,
         resize_window,
+        new_workspace,
+        close_workspace,
+        rename_workspace,
+        goto_workspace,
 
         test "ghostty.h Action.Key" {
             try lib.checkGhosttyHEnum(Key, "GHOSTTY_ACTION_");
