@@ -72,6 +72,9 @@ private struct TabItem: View {
 
     var body: some View {
         HStack(spacing: 4) {
+            if tab.hasBell {
+                BellDot()
+            }
             Text(tab.displayTitle)
                 .lineLimit(1)
                 .truncationMode(.tail)
@@ -93,5 +96,15 @@ private struct TabItem: View {
         .overlay(ReorderMouseView(
             kind: .tab, id: tab.id, closeWidth: Self.closeWidth,
             onSelect: onSelect, onClose: onClose, onReorder: onReorder))
+    }
+}
+
+/// Indicator that a background tab or workspace rang the bell (e.g. an AI
+/// agent finished and wants attention).
+struct BellDot: View {
+    var body: some View {
+        Circle()
+            .fill(Color.orange)
+            .frame(width: 7, height: 7)
     }
 }

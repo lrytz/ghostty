@@ -63,6 +63,9 @@ private struct WorkspaceRow: View {
                 .lineLimit(1)
                 .truncationMode(.tail)
             Spacer(minLength: 0)
+            if workspace.hasBell {
+                BellDot()
+            }
         }
         .padding(.horizontal, 8)
         .padding(.vertical, 5)
