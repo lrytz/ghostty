@@ -18,7 +18,11 @@ struct WorkspaceSidebarView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 2) {
             ForEach(Array(list.workspaces.enumerated()), id: \.element.id) { index, ws in
-                WorkspaceRow(workspace: ws, controller: controller, index: index + 1, isActive: ws === list.active)
+                WorkspaceRow(workspace: ws, controller: controller, index: index + 1, isActive: ws === list.active) { targetID in
+                    guard let target = list.workspaces.first(where: { $0.id == targetID }),
+                          let index = list.index(of: target) else { return }
+                    controller.move(workspace: ws, to: index)
+                }
             }
 
             Spacer()
@@ -47,6 +51,7 @@ private struct WorkspaceRow: View {
     let controller: TerminalController
     let index: Int
     let isActive: Bool
+    let onReorder: (UUID) -> Void
 
     var body: some View {
         HStack(spacing: 6) {
@@ -66,11 +71,14 @@ private struct WorkspaceRow: View {
             RoundedRectangle(cornerRadius: 5)
                 .fill(isActive ? Color.accentColor.opacity(0.25) : Color.clear)
         )
-        .contentShape(Rectangle())
-        .onTapGesture { controller.activate(workspace: workspace) }
-        .contextMenu {
-            Button("Rename…") { controller.renameWorkspace(workspace) }
-            Button("Close") { controller.closeWorkspace(workspace) }
-        }
+        .overlay(ReorderMouseView(
+            kind: .workspace, id: workspace.id,
+            onSelect: { controller.activate(workspace: workspace) },
+            onClose: { controller.closeWorkspace(workspace) },
+            onReorder: onReorder,
+            menuItems: [
+                ("Rename…", { controller.renameWorkspace(workspace) }),
+                ("Close", { controller.closeWorkspace(workspace) }),
+            ]))
     }
 }

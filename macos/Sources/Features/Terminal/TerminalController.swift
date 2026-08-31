@@ -697,6 +697,13 @@ class TerminalController: BaseTerminalController, TabGroupCloseCoordinator.Contr
         invalidateRestorableState()
     }
 
+    func move(workspace ws: Workspace, to index: Int) {
+        guard let from = workspaces.index(of: ws), from != index, workspaces.workspaces.indices.contains(index) else { return }
+        workspaces.workspaces.remove(at: from)
+        workspaces.workspaces.insert(ws, at: index)
+        invalidateRestorableState()
+    }
+
     private func restoreTab(_ tab: TerminalTab, at index: Int, in ws: Workspace) {
         if workspaces.index(of: ws) == nil {
             workspaces.workspaces.append(ws)
