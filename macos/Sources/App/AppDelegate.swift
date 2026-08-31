@@ -376,9 +376,11 @@ class AppDelegate: NSObject,
             // is possible to have other windows in a few scenarios:
             //   - if we're opening a URL since `application(_:openFile:)` is called before this.
             //   - if we're restoring from persisted state
-            if TerminalController.all.isEmpty && derivedConfig.initialWindow {
+            if TerminalController.all.isEmpty {
                 undoManager.disableUndoRegistration()
-                _ = TerminalController.newWindow(ghostty)
+                if !WorkspaceBackup.restore(ghostty), derivedConfig.initialWindow {
+                    _ = TerminalController.newWindow(ghostty)
+                }
                 undoManager.enableUndoRegistration()
             }
         }
@@ -427,6 +429,10 @@ class AppDelegate: NSObject,
         // so remove them all now. In the future we may want to be
         // more selective and only remove surface-targeted notifications.
         UNUserNotificationCenter.current().removeAllDeliveredNotifications()
+
+        // Final truthful snapshot: if the user closed windows before quitting,
+        // this clears them from the backup too.
+        WorkspaceBackup.saveNow()
     }
 
     /// This is called when the application is already open and someone double-clicks the icon

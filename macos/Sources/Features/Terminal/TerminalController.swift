@@ -1069,6 +1069,7 @@ class TerminalController: BaseTerminalController, TabGroupCloseCoordinator.Contr
 
     override func windowWillClose(_ notification: Notification) {
         super.windowWillClose(notification)
+        WorkspaceBackup.schedule()
         cancelPendingInitialPresentation()
         self.relabelTabs()
 
@@ -1114,6 +1115,7 @@ class TerminalController: BaseTerminalController, TabGroupCloseCoordinator.Contr
 
         // Whenever we move save our last position for the next start.
         LastWindowPosition.shared.save(window)
+        WorkspaceBackup.schedule()
     }
 
     override func windowDidResize(_ notification: Notification) {
@@ -1121,6 +1123,12 @@ class TerminalController: BaseTerminalController, TabGroupCloseCoordinator.Contr
 
         // Whenever we resize save our last position and size for the next start.
         LastWindowPosition.shared.save(window)
+        WorkspaceBackup.schedule()
+    }
+
+    override func invalidateRestorableState() {
+        super.invalidateRestorableState()
+        WorkspaceBackup.schedule()
     }
 
     func windowDidBecomeMain(_ notification: Notification) {
