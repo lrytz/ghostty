@@ -4,6 +4,7 @@ import AppKit
 /// AppKit hit target for tab strip items and sidebar rows: click selects
 /// (or closes in the trailing `closeWidth`), middle-click closes, dragging
 /// reorders among views of the same `kind`, right-click shows `menuItems`.
+/// A tab released over another workspace's row moves into that workspace.
 /// SwiftUI can't observe middle clicks and its drag-and-drop is awkward
 /// for a strip; an NSView overlay also swallows right-clicks, hence the
 /// AppKit menu.
@@ -17,6 +18,9 @@ struct ReorderMouseView: NSViewRepresentable {
     let onClose: () -> Void
     let onReorder: (UUID) -> Void
     var menuItems: [(title: String, action: () -> Void)] = []
+    /// Tabs only: the tab's own workspace, which is not a drop target.
+    var workspaceID: UUID?
+    var onMoveToWorkspace: ((UUID) -> Void)?
 
     func makeNSView(context: Context) -> MouseView {
         let v = MouseView()
@@ -36,6 +40,8 @@ struct ReorderMouseView: NSViewRepresentable {
         v.onClose = onClose
         v.onReorder = onReorder
         v.menuItems = menuItems
+        v.workspaceID = workspaceID
+        v.onMoveToWorkspace = onMoveToWorkspace
     }
 
     final class MouseView: NSView {
@@ -46,6 +52,16 @@ struct ReorderMouseView: NSViewRepresentable {
         var onClose: () -> Void = {}
         var onReorder: (UUID) -> Void = { _ in }
         var menuItems: [(title: String, action: () -> Void)] = []
+        var workspaceID: UUID?
+        var onMoveToWorkspace: ((UUID) -> Void)?
+
+        private weak var dropTarget: MouseView? {
+            didSet {
+                guard oldValue !== dropTarget else { return }
+                oldValue?.setHighlighted(false)
+                dropTarget?.setHighlighted(true)
+            }
+        }
 
         override func mouseDown(with event: NSEvent) {
             let p = convert(event.locationInWindow, from: nil)
@@ -59,8 +75,16 @@ struct ReorderMouseView: NSViewRepresentable {
         override func mouseDragged(with event: NSEvent) {
             guard let window, let content = window.contentView, let root = content.superview else { return }
             let point = root.convert(event.locationInWindow, from: nil)
-            guard let target = content.hitTest(point) as? MouseView,
-                  target !== self, target.kind == kind else { return }
+            let target = content.hitTest(point) as? MouseView
+
+            if kind == .tab, onMoveToWorkspace != nil,
+               let target, target.kind == .workspace, target.id != workspaceID {
+                dropTarget = target
+            } else {
+                dropTarget = nil
+            }
+
+            guard let target, target !== self, target.kind == kind else { return }
 
             // Only swap once the pointer passed the target's center, so the
             // items don't flip back and forth at the boundary.
@@ -70,6 +94,18 @@ struct ReorderMouseView: NSViewRepresentable {
             if (selfPos < mid && pos > mid) || (selfPos > mid && pos < mid) {
                 onReorder(target.id)
             }
+        }
+
+        override func mouseUp(with event: NSEvent) {
+            guard let target = dropTarget else { return }
+            dropTarget = nil
+            onMoveToWorkspace?(target.id)
+        }
+
+        private func setHighlighted(_ on: Bool) {
+            wantsLayer = true
+            layer?.cornerRadius = 5
+            layer?.backgroundColor = on ? NSColor.controlAccentColor.withAlphaComponent(0.35).cgColor : nil
         }
 
         override func otherMouseDown(with event: NSEvent) {

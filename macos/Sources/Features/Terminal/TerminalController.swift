@@ -718,6 +718,22 @@ class TerminalController: BaseTerminalController, TabGroupCloseCoordinator.Contr
         invalidateRestorableState()
     }
 
+    /// Move a tab to the end of another workspace. A workspace left without
+    /// tabs is removed. The mounted tab stays mounted and follows the move.
+    func move(tab: TerminalTab, from src: Workspace, to dst: Workspace) {
+        guard src !== dst, let index = src.index(of: tab), workspaces.index(of: dst) != nil else { return }
+        let mounted = workspaces.active?.activeTab === tab
+        src.tabs.remove(at: index)
+        if src.tabs.isEmpty {
+            workspaces.workspaces.removeAll { $0 === src }
+        } else if src.activeTab === tab {
+            src.activeTab = src.tabs[min(index, src.tabs.count - 1)]
+        }
+        dst.tabs.append(tab)
+        if mounted { activate(tab: tab, in: dst) }
+        invalidateRestorableState()
+    }
+
     func move(workspace ws: Workspace, to index: Int) {
         guard let from = workspaces.index(of: ws), from != index, workspaces.workspaces.indices.contains(index) else { return }
         workspaces.workspaces.remove(at: from)

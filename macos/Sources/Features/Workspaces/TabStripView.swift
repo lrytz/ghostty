@@ -47,7 +47,7 @@ private struct TabStripContent: View {
 
     var body: some View {
         ForEach(workspace.tabs) { tab in
-            TabItem(tab: tab, isActive: tab === workspace.activeTab, background: background) {
+            TabItem(tab: tab, workspaceID: workspace.id, isActive: tab === workspace.activeTab, background: background) {
                 controller.activate(tab: tab, in: workspace)
             } onClose: {
                 controller.closeTab(tab, in: workspace)
@@ -55,6 +55,9 @@ private struct TabStripContent: View {
                 guard let target = workspace.tabs.first(where: { $0.id == targetID }),
                       let index = workspace.index(of: target) else { return }
                 controller.move(tab: tab, to: index, in: workspace)
+            } onMoveToWorkspace: { targetID in
+                guard let target = controller.workspaces.workspaces.first(where: { $0.id == targetID }) else { return }
+                controller.move(tab: tab, from: workspace, to: target)
             }
         }
     }
@@ -64,11 +67,13 @@ private struct TabItem: View {
     static let closeWidth: CGFloat = 16
 
     @ObservedObject var tab: TerminalTab
+    let workspaceID: UUID
     let isActive: Bool
     let background: Color
     let onSelect: () -> Void
     let onClose: () -> Void
     let onReorder: (UUID) -> Void
+    let onMoveToWorkspace: (UUID) -> Void
 
     var body: some View {
         HStack(spacing: 4) {
@@ -95,7 +100,8 @@ private struct TabItem: View {
         }
         .overlay(ReorderMouseView(
             kind: .tab, id: tab.id, closeWidth: Self.closeWidth,
-            onSelect: onSelect, onClose: onClose, onReorder: onReorder))
+            onSelect: onSelect, onClose: onClose, onReorder: onReorder,
+            workspaceID: workspaceID, onMoveToWorkspace: onMoveToWorkspace))
     }
 }
 

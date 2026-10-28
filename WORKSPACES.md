@@ -9,7 +9,7 @@ tab strip. Native macOS window tabs are disabled — one window holds every
 workspace, and background tabs keep running. A bell in an inactive tab or
 workspace shows an orange dot. Window restoration covers all workspaces.
 
-Tab strip: click selects, `x` or middle click closes, `+` adds, drag reorders.
+Tab strip: click selects, `x` or middle click closes, `+` adds, drag reorders. Dragging a tab onto a sidebar workspace moves it there.
 Sidebar rows: click switches, right-click renames or closes. `undo` restores a
 closed tab, workspace or window.
 
