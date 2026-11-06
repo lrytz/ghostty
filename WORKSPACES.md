@@ -10,7 +10,8 @@ workspace, and background tabs keep running. A bell in an inactive tab or
 workspace shows an orange dot. Window restoration covers all workspaces.
 
 Tab strip: click selects, `x` or middle click closes, `+` adds, drag reorders. Dragging a tab onto a sidebar workspace moves it there.
-Sidebar rows: click switches, right-click renames or closes. `undo` restores a
+Sidebar rows: click switches, right-click renames or closes. Drag the sidebar's
+edge to resize it; double-click the edge to reset. `undo` restores a
 closed tab, workspace or window.
 
 ## Keybinds

@@ -1,4 +1,5 @@
 import SwiftUI
+import AppKit
 
 /// Vertical list of this window's workspaces.
 struct WorkspaceSidebarView: View {
@@ -7,7 +8,10 @@ struct WorkspaceSidebarView: View {
     let background: Color
     @ObservedObject private var list: WorkspaceList
 
-    static let width: CGFloat = 180
+    static let defaultWidth: CGFloat = 180
+    static let widthRange: ClosedRange<CGFloat> = 120...480
+
+    @AppStorage("WorkspaceSidebarWidth") private var width: Double = defaultWidth
 
     init(controller: TerminalController, background: Color) {
         self.controller = controller
@@ -39,10 +43,72 @@ struct WorkspaceSidebarView: View {
             .padding(.vertical, 6)
         }
         .padding(6)
-        .frame(width: Self.width)
+        .frame(width: Self.widthRange.clamp(width))
         .frame(maxHeight: .infinity)
         .background(background)
         .background(Color.primary.opacity(0.06))
+        .overlay(alignment: .trailing) {
+            SidebarResizeHandle(
+                width: { Self.widthRange.clamp(width) },
+                setWidth: { width = Self.widthRange.clamp($0) },
+                reset: { width = Self.defaultWidth })
+                .frame(width: 5)
+        }
+    }
+}
+
+private extension ClosedRange where Bound == CGFloat {
+    func clamp(_ v: CGFloat) -> CGFloat { Swift.min(Swift.max(v, lowerBound), upperBound) }
+}
+
+/// Drag strip on the sidebar's trailing edge; double-click restores the
+/// default width. AppKit so the resize cursor sticks and window dragging
+/// doesn't steal the mouse.
+private struct SidebarResizeHandle: NSViewRepresentable {
+    let width: () -> CGFloat
+    let setWidth: (CGFloat) -> Void
+    let reset: () -> Void
+
+    func makeNSView(context: Context) -> HandleView { update(HandleView()) }
+    func updateNSView(_ v: HandleView, context: Context) { _ = update(v) }
+
+    private func update(_ v: HandleView) -> HandleView {
+        v.width = width
+        v.setWidth = setWidth
+        v.reset = reset
+        return v
+    }
+
+    final class HandleView: NSView {
+        var width: () -> CGFloat = { 0 }
+        var setWidth: (CGFloat) -> Void = { _ in }
+        var reset: () -> Void = {}
+        private var start: (x: CGFloat, width: CGFloat)?
+
+        override var mouseDownCanMoveWindow: Bool { false }
+
+        override func resetCursorRects() {
+            addCursorRect(bounds, cursor: .resizeLeftRight)
+        }
+
+        override func mouseDown(with event: NSEvent) {
+            if event.clickCount == 2 {
+                reset()
+                start = nil
+                return
+            }
+            start = (event.locationInWindow.x, width())
+        }
+
+        override func mouseDragged(with event: NSEvent) {
+            guard let start else { return }
+            NSCursor.resizeLeftRight.set()
+            setWidth(start.width + event.locationInWindow.x - start.x)
+        }
+
+        override func mouseUp(with event: NSEvent) {
+            start = nil
+        }
     }
 }
 
