@@ -48,6 +48,10 @@ zig build -Doptimize=ReleaseFast    # app bundle in zig-out/Ghostty.app
 
 Copy it to `/Applications` or run it in place with `open zig-out/Ghostty.app`.
 
+To try a build while your everyday Ghostty keeps running, use
+`macos/open-test-copy.sh`. It launches the build as "Ghostty Test" with its own
+saved windows, workspace backup and preferences; the config is shared.
+
 ## Internals
 
 One `NSWindow` per `TerminalController`, `tabbingMode = .disallowed`:

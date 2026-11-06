@@ -18,7 +18,7 @@ enum WorkspaceBackup {
 
     private static let url: URL = FileManager.default
         .urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
-        .appendingPathComponent("com.mitchellh.ghostty/workspaces-backup.json")
+        .appendingPathComponent("\(Bundle.main.bundleIdentifier ?? "com.mitchellh.ghostty")/workspaces-backup.json")
 
     private static var pending: DispatchWorkItem?
 
