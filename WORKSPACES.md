@@ -50,6 +50,13 @@ zig build -Doptimize=ReleaseFast    # app bundle in zig-out/Ghostty.app
 
 Copy it to `/Applications` or run it in place with `open zig-out/Ghostty.app`.
 
+Builds are signed ad hoc, so macOS asks again for permissions (folder access,
+automation, ...) after every update. `macos/sign-app.sh` re-signs a build with a
+fixed self-signed certificate, which keeps them; it uses "lrytz Code Signing"
+(set up with `signing-cert` from my dotfiles), or `GHOSTTY_SIGN_IDENTITY`.
+Release zips come from `macos/make-release-zip.sh <tag>`, which builds, signs
+and refuses an ad-hoc result.
+
 To try a build while your everyday Ghostty keeps running, use
 `macos/open-test-copy.sh`. It launches the build as "Ghostty Test" with its own
 saved windows, workspace backup and preferences; the config is shared.

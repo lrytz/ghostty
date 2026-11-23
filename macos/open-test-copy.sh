@@ -23,6 +23,8 @@ plist="$dst/Contents/Info.plist"
   -c "Set :CFBundleName Ghostty Test" \
   -c "Set :CFBundleDisplayName Ghostty Test" \
   "$plist"
-codesign --force --deep -s - --preserve-metadata=entitlements "$dst" 2>/dev/null
+# The local certificate keeps macOS permissions across rebuilds.
+"$(dirname "$0")/sign-app.sh" "$dst" 2>/dev/null ||
+  codesign --force --deep -s - --preserve-metadata=entitlements "$dst" 2>/dev/null
 
 open "$dst"
