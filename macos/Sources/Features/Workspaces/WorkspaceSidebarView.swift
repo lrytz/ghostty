@@ -148,6 +148,11 @@ private struct WorkspaceRow: View {
             menuItems: [
                 ("Rename…", { controller.renameWorkspace(workspace) }),
                 ("Close", { controller.closeWorkspace(workspace) }),
-            ]))
+            ],
+            onMoveToWindow: { window, beforeID in
+                guard let dst = window.windowController as? TerminalController else { return }
+                let before = dst.workspaces.workspaces.first { $0.id == beforeID }
+                dst.adopt(workspace: workspace, from: controller, before: before)
+            }))
     }
 }

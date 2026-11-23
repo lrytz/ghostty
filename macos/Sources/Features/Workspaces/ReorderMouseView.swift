@@ -4,7 +4,8 @@ import AppKit
 /// AppKit hit target for tab strip items and sidebar rows: click selects
 /// (or closes in the trailing `closeWidth`), middle-click closes, dragging
 /// reorders among views of the same `kind`, right-click shows `menuItems`.
-/// A tab released over another workspace's row moves into that workspace.
+/// A tab released over another workspace's row, in any window, moves into
+/// that workspace; a workspace released over another window moves there.
 /// SwiftUI can't observe middle clicks and its drag-and-drop is awkward
 /// for a strip; an NSView overlay also swallows right-clicks, hence the
 /// AppKit menu.
@@ -21,6 +22,9 @@ struct ReorderMouseView: NSViewRepresentable {
     /// Tabs only: the tab's own workspace, which is not a drop target.
     var workspaceID: UUID?
     var onMoveToWorkspace: ((UUID) -> Void)?
+    /// Workspaces only: dropped on another window, before the row with the
+    /// given ID or at the end.
+    var onMoveToWindow: ((NSWindow, UUID?) -> Void)?
 
     func makeNSView(context: Context) -> MouseView {
         let v = MouseView()
@@ -42,6 +46,7 @@ struct ReorderMouseView: NSViewRepresentable {
         v.menuItems = menuItems
         v.workspaceID = workspaceID
         v.onMoveToWorkspace = onMoveToWorkspace
+        v.onMoveToWindow = onMoveToWindow
     }
 
     final class MouseView: NSView {
@@ -54,6 +59,10 @@ struct ReorderMouseView: NSViewRepresentable {
         var menuItems: [(title: String, action: () -> Void)] = []
         var workspaceID: UUID?
         var onMoveToWorkspace: ((UUID) -> Void)?
+        var onMoveToWindow: ((NSWindow, UUID?) -> Void)?
+
+        /// Another window the dragged workspace would move to.
+        private weak var dropWindow: NSWindow?
 
         private weak var dropTarget: MouseView? {
             didSet {
@@ -73,9 +82,24 @@ struct ReorderMouseView: NSViewRepresentable {
         }
 
         override func mouseDragged(with event: NSEvent) {
-            guard let window, let content = window.contentView, let root = content.superview else { return }
-            let point = root.convert(event.locationInWindow, from: nil)
-            let target = content.hitTest(point) as? MouseView
+            guard let window else { return }
+            let (targetWindow, target) = Self.hit(at: NSEvent.mouseLocation)
+
+            guard targetWindow === window else {
+                // Over another window, or none: no reordering, only moves.
+                let row = target?.kind == .workspace ? target : nil
+                switch kind {
+                case .tab:
+                    dropTarget = onMoveToWorkspace == nil ? nil : row
+                    dropWindow = nil
+                case .workspace:
+                    let isTerminal = targetWindow?.windowController is TerminalController
+                    dropWindow = onMoveToWindow != nil && isTerminal ? targetWindow : nil
+                    dropTarget = dropWindow == nil ? nil : row
+                }
+                return
+            }
+            dropWindow = nil
 
             if kind == .tab, onMoveToWorkspace != nil,
                let target, target.kind == .workspace, target.id != workspaceID {
@@ -97,9 +121,25 @@ struct ReorderMouseView: NSViewRepresentable {
         }
 
         override func mouseUp(with event: NSEvent) {
-            guard let target = dropTarget else { return }
+            let target = dropTarget, targetWindow = dropWindow
             dropTarget = nil
-            onMoveToWorkspace?(target.id)
+            dropWindow = nil
+            switch kind {
+            case .tab:
+                if let target { onMoveToWorkspace?(target.id) }
+            case .workspace:
+                if let targetWindow { onMoveToWindow?(targetWindow, target?.id) }
+            }
+        }
+
+        /// The app's frontmost window at a screen point, and the item view
+        /// under it. Other apps' windows in front hide ours.
+        private static func hit(at screenPoint: NSPoint) -> (NSWindow?, MouseView?) {
+            let number = NSWindow.windowNumber(at: screenPoint, belowWindowWithWindowNumber: 0)
+            guard let window = NSApp.window(withWindowNumber: number),
+                  let content = window.contentView, let root = content.superview else { return (nil, nil) }
+            let point = root.convert(window.convertPoint(fromScreen: screenPoint), from: nil)
+            return (window, content.hitTest(point) as? MouseView)
         }
 
         private func setHighlighted(_ on: Bool) {

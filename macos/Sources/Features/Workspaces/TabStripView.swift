@@ -56,8 +56,15 @@ private struct TabStripContent: View {
                       let index = workspace.index(of: target) else { return }
                 controller.move(tab: tab, to: index, in: workspace)
             } onMoveToWorkspace: { targetID in
-                guard let target = controller.workspaces.workspaces.first(where: { $0.id == targetID }) else { return }
-                controller.move(tab: tab, from: workspace, to: target)
+                for dst in TerminalController.all {
+                    guard let target = dst.workspaces.workspaces.first(where: { $0.id == targetID }) else { continue }
+                    if dst === controller {
+                        controller.move(tab: tab, from: workspace, to: target)
+                    } else {
+                        dst.adopt(tab: tab, from: controller, in: workspace, to: target)
+                    }
+                    return
+                }
             }
         }
     }

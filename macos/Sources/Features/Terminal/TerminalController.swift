@@ -734,6 +734,64 @@ class TerminalController: BaseTerminalController, TabGroupCloseCoordinator.Contr
         invalidateRestorableState()
     }
 
+    /// Move a tab from another window to the end of `dst` and show it.
+    func adopt(tab: TerminalTab, from src: TerminalController, in srcWs: Workspace, to dst: Workspace) {
+        guard src !== self, srcWs.index(of: tab) != nil, workspaces.index(of: dst) != nil else { return }
+        src.detach(tab: tab, from: srcWs)
+        dst.tabs.append(tab)
+        activate(tab: tab, in: dst)
+        window?.makeKeyAndOrderFront(nil)
+        invalidateRestorableState()
+    }
+
+    /// Move a workspace from another window into this one, before `before`
+    /// (or at the end), and show it.
+    func adopt(workspace ws: Workspace, from src: TerminalController, before: Workspace?) {
+        guard src !== self, src.workspaces.index(of: ws) != nil else { return }
+        src.detach(workspace: ws)
+        let index = before.flatMap { workspaces.index(of: $0) } ?? workspaces.workspaces.count
+        workspaces.workspaces.insert(ws, at: index)
+        activate(workspace: ws)
+        window?.makeKeyAndOrderFront(nil)
+        invalidateRestorableState()
+    }
+
+    /// Take a tab out of this window, keeping its surfaces alive.
+    private func detach(tab: TerminalTab, from ws: Workspace) {
+        guard let index = ws.index(of: tab) else { return }
+        if ws.tabs.count == 1 {
+            detach(workspace: ws)
+            return
+        }
+        ws.tabs.remove(at: index)
+        if ws.activeTab === tab {
+            let next = ws.tabs[min(index, ws.tabs.count - 1)]
+            if workspaces.active === ws { activate(tab: next, in: ws) } else { ws.activeTab = next }
+        }
+        invalidateRestorableState()
+    }
+
+    /// Take a workspace out of this window, keeping its surfaces alive. A
+    /// window left empty closes, without an undo entry since nothing was lost.
+    private func detach(workspace ws: Workspace) {
+        guard let index = workspaces.index(of: ws) else { return }
+        if workspaces.workspaces.count == 1 {
+            switchingTab = true
+            surfaceTree = .init()
+            switchingTab = false
+            workspaces.workspaces = []
+            workspaces.active = nil
+            // Deferred: the drag that triggered this runs in a view of this window.
+            DispatchQueue.main.async { [weak self] in self?.window?.close() }
+            return
+        }
+        workspaces.workspaces.remove(at: index)
+        if workspaces.active === ws {
+            activate(workspace: workspaces.workspaces[min(index, workspaces.workspaces.count - 1)])
+        }
+        invalidateRestorableState()
+    }
+
     func move(workspace ws: Workspace, to index: Int) {
         guard let from = workspaces.index(of: ws), from != index, workspaces.workspaces.indices.contains(index) else { return }
         workspaces.workspaces.remove(at: from)
